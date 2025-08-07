@@ -2,16 +2,11 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>NAVI 가치 매칭 탐험</title>
-    <!--
-      파일 구조:
-      - index.html          ← 이 파일
-      - navi.png            ← NAVI 캐릭터 이미지
-      - cards/
-          ├─ scenario1.png … scenario4.png   ← 상황 카드 이미지
-          ├─ a1.png … a32.png               ← 덕목 카드 이미지
-    -->
+    <!-- PWA 매니페스트 -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#4caf50">
     <style>
         body { font-family: Arial, sans-serif; background: #f0f8ff; color: #333; text-align: center; padding: 20px; font-size: 18px; }
         #game-container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -21,26 +16,8 @@
         #navi-talk { margin-right: 10px; }
         #navi-talk img { width: 120px; height: auto; }
         #speech-bubble { position: relative; background: #fff; border: 2px solid #666; border-radius: 10px; padding: 15px; max-width: 400px; text-align: left; }
-        #speech-bubble:after {
-            content: '';
-            position: absolute;
-            top: 30px;
-            left: -20px;
-            width: 0;
-            height: 0;
-            border: 10px solid transparent;
-            border-right-color: #666;
-        }
-        #speech-bubble:before {
-            content: '';
-            position: absolute;
-            top: 30px;
-            left: -16px;
-            width: 0;
-            height: 0;
-            border: 8px solid transparent;
-            border-right-color: #fff;
-        }
+        #speech-bubble:after { content: ''; position: absolute; top: 30px; left: -20px; width: 0; height: 0; border: 10px solid transparent; border-right-color: #666; }
+        #speech-bubble:before { content: ''; position: absolute; top: 30px; left: -16px; width: 0; height: 0; border: 8px solid transparent; border-right-color: #fff; }
         #scenario-text { font-size: 20px; margin: 0; }
         #scenario-img { display: block; margin: 10px auto 20px; width: 80%; max-width: 280px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         #choices { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
@@ -59,7 +36,7 @@
         </div>
         <div id="scenario-container">
             <div id="navi-talk">
-                <img src="navi.png" alt="NAVI 캐릭터">
+                <img src="./navi.png" alt="NAVI 캐릭터">
             </div>
             <div id="speech-bubble">
                 <div id="scenario-text">시작하려면 버튼을 눌러주세요.</div>
@@ -73,13 +50,24 @@
     </div>
 
     <script>
+        // 서비스 워커 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('SW 등록 성공:', reg.scope))
+                    .catch(err => console.log('SW 등록 실패:', err));
+            });
+        }
+
         const exampleCards = [
-            { image: 'cards/scenario1.png', text: '친구가 넘어져 무릎에 상처가 났을 때, 함께 놀던 친구가 도와주며 치료실까지 안내한 상황', answer: '배려', options: ['배려','협력','용기'] },
-            { image: 'cards/scenario2.png', text: '모둠 발표 연습 전, 자신의 대사를 미리 완벽하게 외우고 연습 시간에 늦지 않고 참석한 상황', answer: '책임', options: ['책임','성실','정직'] },
-            { image: 'cards/scenario3.png', text: '친구가 수학 문제를 어려워하자, 자리에 남아 끝까지 함께 풀어본 상황', answer: '협동', options: ['협동','인내','공감'] },
-            { image: 'cards/scenario4.png', text: '시험지 오타를 발견하고, 정답을 적기 전에 선생님께 먼저 알려드린 상황', answer: '정직', options: ['정직','배려','감사'] }
+            { image: './cards/scenario1.png', text: '친구가 넘어져 무릎에 상처가 났을 때, 함께 놀던 친구가 도와주며 치료실까지 안내한 상황', answer: '배려', options: ['배려','협력','용기'] },
+            { image: './cards/scenario2.png', text: '모둠 발표 연습 전, 자신의 대사를 미리 완벽하게 외우고 연습 시간에 늦지 않고 참석한 상황', answer: '책임', options: ['책임','성실','정직'] },
+            { image: './cards/scenario3.png', text: '친구가 수학 문제를 어려워하자, 자리에 남아 끝까지 함께 풀어본 상황', answer: '협동', options: ['협동','인내','공감'] },
+            { image: './cards/scenario4.png', text: '시험지 오타를 발견하고, 정답을 적기 전에 선생님께 먼저 알려드린 상황', answer: '정직', options: ['정직','배려','감사'] }
         ];
-        const optionBaseNames = { '감사':'a1','겸손':'a2','경청':'a3','공감':'a4','공평':'a5','관용':'a6','긍정':'a7','끈기':'a8','나눔':'a9','도전':'a10','배려':'a11','사랑':'a12','성실':'a13','성찰':'a14','소통':'a15','신뢰':'a16','약속':'a17','양보':'a18','열정':'a19','예의/예절':'a20','용기':'a21','우정':'a22','인내':'a23','자기조절':'a24','절제':'a25','정의':'a26','정직':'a27','존중':'a28','질서':'a29','책임':'a30','협동':'a31','효':'a32' };
+        const optionBaseNames = { '감사':'a1','겸손':'a2','경청':'a3','공감':'a4','공평':'a5','관용':'a6','긍정':'a7','끈기':'a8','나눔':'a9','도전':'a10',
+            '배려':'a11','사랑':'a12','성실':'a13','성찰':'a14','소통':'a15','신뢰':'a16','약속':'a17','양보':'a18','열정':'a19','예의/예절':'a20',
+            '용기':'a21','우정':'a22','인내':'a23','자기조절':'a24','절제':'a25','정의':'a26','정직':'a27','존중':'a28','질서':'a29','책임':'a30','협동':'a31','효':'a32' };
         let currentCard, score = 0;
         const scenarioImg  = document.getElementById('scenario-img');
         const scenarioText = document.getElementById('scenario-text');
@@ -87,6 +75,7 @@
         const nextBtn      = document.getElementById('next-btn');
         const messageEl    = document.getElementById('message');
         const scoreEl      = document.getElementById('score');
+
         function showNext() {
             messageEl.textContent = '';
             choicesEl.innerHTML = '';
@@ -97,21 +86,40 @@
             shuffle(currentCard.options).forEach(opt => {
                 const btn = document.createElement('button'); btn.className = 'choice-btn';
                 const img = document.createElement('img');
-                img.src = `cards/${optionBaseNames[opt]}.png`;
+                img.src = `./cards/${optionBaseNames[opt]}.png`;
                 img.alt = opt; btn.appendChild(img);
                 btn.onclick = () => checkAnswer(opt);
                 choicesEl.appendChild(btn);
             });
             nextBtn.disabled = true;
         }
+
         function checkAnswer(selected) {
             choicesEl.querySelectorAll('button').forEach(b => b.disabled = true);
-            if (selected === currentCard.answer) { score++; scoreEl.textContent = `점수: ${score}`; messageEl.textContent = '정답! 🎉'; }
-            else { messageEl.textContent = `틀렸습니다. 정답은 ${currentCard.answer}입니다.`; }
-            nextBtn.disabled = false; nextBtn.textContent = '다음 상황 보기';
+            if (selected === currentCard.answer) {
+                score++;
+                scoreEl.textContent = `점수: ${score}`;
+                messageEl.textContent = '정답! 🎉';
+            } else {
+                messageEl.textContent = `틀렸습니다. 정답은 ${currentCard.answer}입니다.`;
+            }
+            nextBtn.disabled = false;
+            nextBtn.textContent = '다음 상황 보기';
         }
-        nextBtn.addEventListener('click', () => { if (nextBtn.textContent === '게임 시작') nextBtn.textContent = '로딩 중...'; showNext(); });
-        function shuffle(arr) { const a = arr.slice(); for (let i = a.length-1; i>0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+        nextBtn.addEventListener('click', () => {
+            if (nextBtn.textContent === '게임 시작') nextBtn.textContent = '로딩 중...';
+            showNext();
+        });
+
+        function shuffle(arr) {
+            const a = arr.slice();
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
     </script>
 </body>
 </html>
